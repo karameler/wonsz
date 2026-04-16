@@ -1,6 +1,8 @@
 package com.example.wonsz;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.ranging.RangingManager;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -17,15 +19,32 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
-    private Integer japka=0;
+    private List<Japka> ilejapka= new ArrayList<>();
+    private int wynik=0;
     //surfaceview to pole ekranu, surfaceholder sprawia że sie na nim rysuje
     private SurfaceView ekran;
     private SurfaceHolder surfaceHolder;
     private TextView scor;
     private ImageButton gura, dul, lewo, prawo;
+
+    private static int rozmiarskubanca=0;
+    private static int rozmiarjapka=0;
+    private static int dłskubanca=3;
+    private static int kolorwonsz= Color.BLUE;
+    private static int kolorjapko= Color.RED;
+    //od 1-1000
+    private static int prędkosc=800;
+
+    private int PozycjaX, PozycjaY;
+
+    //stoper do ruchu węża
+    private Timer timer;
 
     // kierunek prodóży wężusia
     private String kierunek="prawo";
@@ -114,9 +133,93 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 
     }
-    private void start(){
-        japka=0;
+    private void start() {
+        ilejapka.clear();
 
-        scor.setText("wynik: "+japka);
+        scor.setText("wynik: 0");
+
+        wynik=0;
+        kierunek="prawo";
+
+        int pozycjastartX = (rozmiarskubanca) * dłskubanca;
+        int x=0;
+        do {
+            Japka japko = new Japka(pozycjastartX,rozmiarskubanca);
+            ilejapka.add(japko);
+
+            pozycjastartX = pozycjastartX - (rozmiarskubanca*2);
+            x++;
+        }while (x<dłskubanca);
+
+        ustawjapko();
+        //zacznij gre
+        ruch();
+    }
+    private void ustawjapko(){
+        int szerekran = ekran.getWidth()- (rozmiarskubanca*2);
+        int dłekran = ekran.getHeight()- (rozmiarskubanca*2);
+
+        int RandomX = new Random().nextInt(szerekran/rozmiarskubanca);
+        int RandomY = new Random().nextInt(dłekran/rozmiarskubanca);
+
+        if((RandomX % 2)!=0){
+            RandomX=RandomX+1;
+        }
+        if((RandomY % 2)!=0){
+            RandomY=RandomY+1;
+        }
+        PozycjaX = (rozmiarskubanca * RandomX) +rozmiarskubanca;
+        PozycjaY = (rozmiarskubanca * RandomY) +rozmiarskubanca;
+    }
+    private void ruch(){
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                //pozycja głowy wensza
+                int headposX = ilejapka.get(0).getPozycjaX();
+                int headposY = ilejapka.get(0).getPozycjaY();
+
+                //czy zjad japko
+                if(headposX == PozycjaX && PozycjaY == headposY){
+                    urośnijwensza();
+
+                    ustawjapko();
+                }
+                //w którą patrzy wensz
+                switch (kierunek) {
+                    case "prawo":
+                        ilejapka.get(0).setPozycjaX(headposX + (rozmiarskubanca * 2));
+                        ilejapka.get(0).setPozycjaY(headposY);
+                        break;
+                    case "lewo":
+                        ilejapka.get(0).setPozycjaX(headposX - (rozmiarskubanca * 2));
+                        ilejapka.get(0).setPozycjaY(headposY);
+                        break;
+                    case "gura":
+                        ilejapka.get(0).setPozycjaX(headposX);
+                        ilejapka.get(0).setPozycjaY(headposY + (rozmiarskubanca * 2 ));
+                        break;
+                    case "dul":
+                        ilejapka.get(0).setPozycjaX(headposX);
+                        ilejapka.get(0).setPozycjaY(headposY - (rozmiarskubanca * 2 ));
+                        break;
+                }
+
+                if(czyprzegrana(headposX,headposY)){
+                    //jak przegrał, zatrzymajgre
+                    timer.purge();
+                    timer.cancel();
+                }
+
+            }
+        }, 1000 -prędkosc, 1000-prędkosc);
+    }
+    private void urośnijwensza(){
+
+    }
+    private boolean czyprzegrana(int headposX, int headposY){
+        boolean gameOver = false;
+        return gameOver;
     }
 }
