@@ -29,7 +29,7 @@
         android:id="@+id/consola"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black"
+        android:background="#111184"
         android:gravity="center"
         android:orientation="horizontal"
         android:padding="10dp"
@@ -52,6 +52,7 @@
 
             <ListView
                 android:id="@+id/lista"
+
                 android:layout_width="wrap_content"
                 android:layout_height="113dp" />
 
