@@ -32,15 +32,19 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
-    private final List<Japka> ilejapka= new ArrayList<>();
+    private List<Japka> ilejapka= new ArrayList<>();
+    //wynik gry, ile jabłek
     private int wynik=0;
     //surfaceview to pole ekranu, surfaceholder sprawia że sie na nim rysuje
     private SurfaceView ekran;
+    //blokuje / odblokowywuje ekran
     private SurfaceHolder surfaceHolder;
+    //wynik ale textview a nie sam numer
     private TextView scor;
     private ImageButton gura, dul, lewo, prawo;
-
-    private static int rozmiarskubanca=28;
+    //grubość kropek wensza
+    private static int rozmiarskubanca=50;
+    //domyślna jego długość
     private static int dłskubanca=3;
     private static int kolorjapek= Color.RED;
     private Paint kolorjapko= null;
@@ -203,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     timer.cancel();
 
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage("twój wynik to: "+ scor);
+                    builder.setMessage("twój wynik to: "+ wynik);
                     builder.setTitle("PRZEGRAŁEŚ!");
                     builder.setCancelable(false);
                     builder.setPositiveButton("zcznij od nowa", new DialogInterface.OnClickListener() {
