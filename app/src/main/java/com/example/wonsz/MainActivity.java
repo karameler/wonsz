@@ -1,8 +1,13 @@
 package com.example.wonsz;
 
+import android.content.DialogInterface;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.ranging.RangingManager;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -12,7 +17,9 @@ import android.window.SurfaceSyncGroup;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -25,7 +32,7 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
-    private List<Japka> ilejapka= new ArrayList<>();
+    private final List<Japka> ilejapka= new ArrayList<>();
     private int wynik=0;
     //surfaceview to pole ekranu, surfaceholder sprawia że sie na nim rysuje
     private SurfaceView ekran;
@@ -33,18 +40,19 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private TextView scor;
     private ImageButton gura, dul, lewo, prawo;
 
-    private static int rozmiarskubanca=0;
-    private static int rozmiarjapka=0;
+    private static int rozmiarskubanca=28;
     private static int dłskubanca=3;
-    private static int kolorwonsz= Color.BLUE;
-    private static int kolorjapko= Color.RED;
+    private static int kolorjapek= Color.RED;
+    private Paint kolorjapko= null;
     //od 1-1000
     private static int prędkosc=800;
 
-    private int PozycjaX, PozycjaY;
+    private int PozycjaX=0, PozycjaY=0;
 
     //stoper do ruchu węża
     private Timer timer;
+    //do malowania na surfaceview
+    private Canvas canvas = null;
 
     // kierunek prodóży wężusia
     private String kierunek="prawo";
@@ -58,60 +66,45 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        SurfaceView ekran = findViewById(R.id.ekran);
-        TextView scor=findViewById(R.id.scor);
+        ekran = findViewById(R.id.ekran);
+        scor=findViewById(R.id.scor);
 
-        ImageButton gura = findViewById(R.id.gura);
-        ImageButton dul = findViewById(R.id.dul);
-        ImageButton lewo = findViewById(R.id.lewo);
-        ImageButton prawo = findViewById(R.id.prawo);
+        final ImageButton gura = findViewById(R.id.gura);
+        final ImageButton dul = findViewById(R.id.dul);
+        final ImageButton lewo = findViewById(R.id.lewo);
+        final ImageButton prawo = findViewById(R.id.prawo);
 
         ekran.getHolder().addCallback(this);
 
         gura.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if(kierunek.equals("dul")){
-
-                }
-                else {
-
-                    kierunek="gura";
+            public void onClick(View view) {
+                if(!kierunek.equals("dul")){
+                    kierunek = "gura";
                 }
             }
         });
         dul.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if(kierunek.equals("gura")){
-
-                }
-                else {
-                    kierunek="dul";
-
+            public void onClick(View view) {
+                if(!kierunek.equals("gura")){
+                    kierunek = "dul";
                 }
             }
         });
         lewo.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if(kierunek.equals("prawo")){
-
-                }
-                else {
-                    kierunek="lewo";
-
+            public void onClick(View view) {
+                if(!kierunek.equals("prawo")){
+                    kierunek = "lewo";
                 }
             }
         });
         prawo.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if(kierunek.equals("lewo")){
-
-                }
-                else {
-                    kierunek="prawo";
+            public void onClick(View view) {
+                if(!kierunek.equals("lewo")){
+                    kierunek = "prawo";
                 }
             }
         });
@@ -123,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
+    public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         this.surfaceHolder = surfaceHolder;
 
         start();
@@ -136,20 +129,18 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private void start() {
         ilejapka.clear();
 
-        scor.setText("wynik: 0");
+        scor.setText("0");
 
         wynik=0;
         kierunek="prawo";
 
         int pozycjastartX = (rozmiarskubanca) * dłskubanca;
-        int x=0;
-        do {
-            Japka japko = new Japka(pozycjastartX,rozmiarskubanca);
+        for(int i=0; i<dłskubanca;i++){
+            Japka japko = new Japka(pozycjastartX, rozmiarskubanca);
             ilejapka.add(japko);
 
-            pozycjastartX = pozycjastartX - (rozmiarskubanca*2);
-            x++;
-        }while (x<dłskubanca);
+            pozycjastartX = pozycjastartX - (rozmiarskubanca * 2);
+        }
 
         ustawjapko();
         //zacznij gre
@@ -198,11 +189,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                         break;
                     case "gura":
                         ilejapka.get(0).setPozycjaX(headposX);
-                        ilejapka.get(0).setPozycjaY(headposY + (rozmiarskubanca * 2 ));
+                        ilejapka.get(0).setPozycjaY(headposY - (rozmiarskubanca * 2 ));
                         break;
                     case "dul":
                         ilejapka.get(0).setPozycjaX(headposX);
-                        ilejapka.get(0).setPozycjaY(headposY - (rozmiarskubanca * 2 ));
+                        ilejapka.get(0).setPozycjaY(headposY + (rozmiarskubanca * 2 ));
                         break;
                 }
 
@@ -210,16 +201,96 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     //jak przegrał, zatrzymajgre
                     timer.purge();
                     timer.cancel();
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setMessage("twój wynik to: "+ scor);
+                    builder.setTitle("PRZEGRAŁEŚ!");
+                    builder.setCancelable(false);
+                    builder.setPositiveButton("zcznij od nowa", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //odnów gre :fire:
+                            start();
+                        }
+                    });
+                    //nowy timer sie aktywuje w tle więc pokaż
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            builder.show();
+                        }
+                    });
+                }
+                else {
+                    //łączy surfaceholder z canvas by na nim rysować
+                    canvas = surfaceHolder.lockCanvas();
+                    canvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR);
+                    //rusza głową wensza
+                    canvas.drawCircle(ilejapka.get(0).getPozycjaX(), ilejapka.get(0).getPozycjaY(), rozmiarskubanca, namaluj());
+                    //generuje japko
+                    canvas.drawCircle(PozycjaX,PozycjaY,rozmiarskubanca, namaluj());
+                    // reszta punktów podąrza
+                    for(int i=1;i<ilejapka.size();i++){
+                        int pozycjatymczasX = ilejapka.get(i).getPozycjaX();
+                        int pozycjatymczasY = ilejapka.get(i).getPozycjaY();
+                        //rusza punktami
+                        ilejapka.get(i).setPozycjaX(headposX);
+                        ilejapka.get(i).setPozycjaY(headposY);
+                        canvas.drawCircle(ilejapka.get(i).getPozycjaX(), ilejapka.get(i).getPozycjaY(), rozmiarskubanca,namaluj());
+
+                        //zmienia pozycje głowy
+                        headposX = pozycjatymczasX;
+                        headposY = pozycjatymczasY;
+                    }
+                    surfaceHolder.unlockCanvasAndPost(canvas);
                 }
 
             }
         }, 1000 -prędkosc, 1000-prędkosc);
     }
     private void urośnijwensza(){
-
+        //generuje nowy punkt
+        Japka punkty = new Japka(0, 0);
+        //dodaje ten punkt do węża
+        ilejapka.add(punkty);
+        //zwiększa wynik
+        wynik++;
+        //dodaj wynik do textview wyniku
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                scor.setText(String.valueOf(wynik));
+            }
+        });
     }
     private boolean czyprzegrana(int headposX, int headposY){
         boolean gameOver = false;
+
+        if(ilejapka.get(0).getPozycjaX()<0 ||
+                ilejapka.get(0).getPozycjaY()<0 ||
+                ilejapka.get(0).getPozycjaX()>= ekran.getWidth() ||
+                ilejapka.get(0).getPozycjaY()>= ekran.getHeight())
+        {
+            gameOver=true;
+        }
+        for(int i=1; i<ilejapka.size();i++){
+
+            if (headposX == ilejapka.get(i).getPozycjaX() &&
+                    headposY == ilejapka.get(i).getPozycjaY()){
+                gameOver=true;
+                break;
+            }
+        }
         return gameOver;
+    }
+    private Paint namaluj(){
+
+        if (kolorjapko==null) {
+            kolorjapko = new Paint();
+            kolorjapko.setColor(kolorjapek);
+            kolorjapko.setStyle(Paint.Style.FILL);
+            kolorjapko.setAntiAlias(true); //daje płynności
+        }
+            return kolorjapko;
     }
 }
